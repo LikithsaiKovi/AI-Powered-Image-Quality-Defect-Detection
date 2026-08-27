@@ -21,7 +21,15 @@ async def lifespan(_: FastAPI):
     yield
 
 app = FastAPI(title="Image Quality Assessment API", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_origin_regex=".*",
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 def health(): return {"status": "ok", "model_loaded": analyzer is not None}
