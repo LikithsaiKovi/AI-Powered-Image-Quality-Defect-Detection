@@ -1,0 +1,7 @@
+issue,precision,recall,f1,true_negative,false_positive,false_negative,true_positive
+blur,1.0,0.8636,0.9268,176,0,6,38
+underexposure,0.8636,0.9048,0.8837,172,6,4,38
+overexposure,0.9024,0.9024,0.9024,175,4,4,37
+noise,1.0,0.8039,0.8913,169,0,10,41
+defect,0.75,0.6,0.6667,172,8,16,24
+severe_degradation,0.8837,0.9744,0.9268,176,5,1,38

@@ -1,11 +1,13 @@
 """Train the multi-label Random Forest from clean images and controlled degradations."""
 import argparse
+import csv
+import json
 from pathlib import Path
 import joblib
 import cv2
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import GroupShuffleSplit
 from .degradations import ISSUES, apply_degradation
 from .features import FEATURE_NAMES, extract_features, vectorize
@@ -52,7 +54,21 @@ def make_dataset(clean_images: list[np.ndarray], seed: int = 7):
             X.append(vectorize(extract_features(altered))); y.append(labels); groups.append(group)
     return np.asarray(X), np.asarray(y), np.asarray(groups)
 
-def train(clean_dir: Path | None, output: Path, bootstrap_if_missing: bool = False):
+def write_evaluation_report(y_true: np.ndarray, y_pred: np.ndarray, report_dir: Path, source_count: int):
+    report_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for index, issue in enumerate(ISSUES):
+        tn, fp, fn, tp = confusion_matrix(y_true[:, index], y_pred[:, index], labels=[0, 1]).ravel()
+        rows.append({"issue": issue, "precision": round(float(precision_score(y_true[:, index], y_pred[:, index], zero_division=0)), 4), "recall": round(float(recall_score(y_true[:, index], y_pred[:, index], zero_division=0)), 4), "f1": round(float(f1_score(y_true[:, index], y_pred[:, index], zero_division=0)), 4), "true_negative": int(tn), "false_positive": int(fp), "false_negative": int(fn), "true_positive": int(tp)})
+    with (report_dir / "per_class_metrics.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=rows[0].keys()); writer.writeheader(); writer.writerows(rows)
+    overall_true, overall_pred = y_true.any(axis=1).astype(int), y_pred.any(axis=1).astype(int)
+    overall_cm = confusion_matrix(overall_true, overall_pred, labels=[0, 1]).tolist()
+    summary = {"source_images": source_count, "split": "grouped 80/20 by clean source image", "classes": list(ISSUES), "per_class": rows, "overall_any_issue_confusion_matrix": {"labels": ["acceptable", "has_issue"], "matrix": overall_cm}}
+    (report_dir / "metrics.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    return rows
+
+def train(clean_dir: Path | None, output: Path, bootstrap_if_missing: bool = False, report_dir: Path | None = None):
     clean_images = load_clean_images(clean_dir) if clean_dir and clean_dir.exists() else []
     if len(clean_images) < 10:
         if not bootstrap_if_missing:
@@ -64,15 +80,17 @@ def train(clean_dir: Path | None, output: Path, bootstrap_if_missing: bool = Fal
     model = RandomForestClassifier(n_estimators=250, max_depth=16, min_samples_leaf=2, n_jobs=-1, random_state=11, class_weight="balanced")
     model.fit(X[train_idx], y[train_idx])
     predicted = model.predict(X[test_idx])
-    metrics = {issue: float(f1_score(y[test_idx, i], predicted[:, i], zero_division=0)) for i, issue in enumerate(ISSUES)}
-    artifact = {"model": model, "feature_names": FEATURE_NAMES, "issues": ISSUES, "version": "rf-synthetic-v1", "validation_f1": metrics, "training_sources": len(clean_images)}
+    report_rows = write_evaluation_report(y[test_idx], predicted, report_dir, len(clean_images)) if report_dir else []
+    metrics = {row["issue"]: row["f1"] for row in report_rows} if report_rows else {issue: float(f1_score(y[test_idx, i], predicted[:, i], zero_division=0)) for i, issue in enumerate(ISSUES)}
+    artifact = {"model": model, "feature_names": FEATURE_NAMES, "issues": ISSUES, "version": "rf-controlled-degradation-v2", "validation_f1": metrics, "training_sources": len(clean_images)}
     output.parent.mkdir(parents=True, exist_ok=True); joblib.dump(artifact, output)
-    print({"saved": str(output), "validation_f1": metrics, "training_sources": len(clean_images), "rows": len(X)})
+    print({"saved": str(output), "validation_f1": metrics, "training_sources": len(clean_images), "rows": len(X), "report_dir": str(report_dir) if report_dir else None})
     return artifact
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean-dir", type=Path, default=Path("../data/clean"))
     parser.add_argument("--output", type=Path, default=Path("./models/quality_model.joblib"))
+    parser.add_argument("--report-dir", type=Path)
     parser.add_argument("--bootstrap-if-missing", action="store_true")
-    args = parser.parse_args(); train(args.clean_dir, args.output, args.bootstrap_if_missing)
+    args = parser.parse_args(); train(args.clean_dir, args.output, args.bootstrap_if_missing, args.report_dir)

@@ -21,7 +21,7 @@ class QualityAnalyzer:
         vector = np.asarray([vectorize(features)])
         probabilities = self.model.predict_proba(vector)
         issue_probs = {issue: float(probability[0][list(self.model.classes_[idx]).index(1)]) if 1 in self.model.classes_[idx] else 0.0 for idx, (issue, probability) in enumerate(zip(self.issues, probabilities))}
-        weights = {"blur": 24, "underexposure": 19, "overexposure": 19, "noise": 18, "defect": 25}
+        weights = {"blur": 30, "underexposure": 25, "overexposure": 25, "noise": 20, "defect": 35, "severe_degradation": 55}
         score = int(round(np.clip(100 - sum(weights[name] * value for name, value in issue_probs.items()), 0, 100)))
         label = "ACCEPTABLE" if score >= 80 else "DEGRADED" if score >= 50 else "POTENTIALLY_DEFECTIVE"
         detected = []

@@ -6,7 +6,7 @@ A deployable full-stack image-quality assessment application for the internship 
 
 The solution is a **hybrid computer-vision and machine-learning system**. OpenCV derives interpretable visual features (sharpness, exposure clipping, contrast, noise residual, entropy, saturation, edge density, blockiness, and colourfulness). A multi-output Random Forest learns issue probabilities from those features. This is an AI-based decision component, rather than a fixed threshold-only rules engine, while remaining fast and explainable.
 
-The overall score starts at 100 and deducts weighted learned issue probabilities. Labels are `ACCEPTABLE` (80–100), `DEGRADED` (50–79), and `POTENTIALLY_DEFECTIVE` (0–49). The API includes both the probabilities and source statistics so the decision can be reviewed.
+The overall score starts at 100 and deducts severity-weighted learned issue probabilities; visual defects and severe degradation carry the largest penalty. Labels are `ACCEPTABLE` (80–100), `DEGRADED` (50–79), and `POTENTIALLY_DEFECTIVE` (0–49). The API includes both the probabilities and source statistics so the decision can be reviewed.
 
 ## Technology
 
@@ -30,18 +30,18 @@ On first startup, the container creates a small procedural demo training set and
 
 ## Train with your own clean images
 
-Put at least 10 copyright-permitted clean JPEG/PNG/WEBP/BMP images under `data/clean/`, then run:
+Put at least 30 copyright-permitted clean JPEG/PNG/WEBP/BMP images under `data/clean/`, then run:
 
 ```powershell
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m app.ml.train --clean-dir ../data/clean --output models/quality_model.joblib
+python -m app.ml.train --clean-dir ../data/clean --output models/quality_model.joblib --report-dir ../docs/results
 uvicorn app.main:app --reload
 ```
 
-The training script makes deterministic controlled degradations and uses a grouped train/validation split. See [the evaluation protocol](docs/evaluation.md) for how to document metrics and limitations.
+The training script makes deterministic controlled degradations (including severe JPEG/pixelation degradation), uses a grouped train/validation split, and writes per-class precision, recall, F1, and confusion-matrix counts. See [the evaluation protocol](docs/evaluation.md) for limitations.
 
 ## API
 
@@ -74,7 +74,7 @@ Example response:
 
 ## Data, modelling, and evaluation
 
-The controlled transformations are in `backend/app/ml/degradations.py`; feature extraction is in `backend/app/ml/features.py`; model training is in `backend/app/ml/train.py`. Use unseen source images for validation, retain the console F1 results, and include representative clean, blur, dark, bright, noisy, and defect images in `data/samples/` for the submitted demo.
+The controlled transformations are in `backend/app/ml/degradations.py`; feature extraction is in `backend/app/ml/features.py`; model training is in `backend/app/ml/train.py`. Use unseen source images for validation, retain the generated results, and create representative samples with `python -m app.ml.generate_samples --clean-dir ../data/clean --output-dir ../data/samples`.
 
 See [architecture](docs/architecture.md) and [evaluation](docs/evaluation.md) for the technical explanation, data-split methodology, limitations, and failure cases.
 

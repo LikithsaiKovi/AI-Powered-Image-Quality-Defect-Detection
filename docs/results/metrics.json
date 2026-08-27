@@ -1,0 +1,90 @@
+{
+  "source_images": 50,
+  "split": "grouped 80/20 by clean source image",
+  "classes": [
+    "blur",
+    "underexposure",
+    "overexposure",
+    "noise",
+    "defect",
+    "severe_degradation"
+  ],
+  "per_class": [
+    {
+      "issue": "blur",
+      "precision": 1.0,
+      "recall": 0.8636,
+      "f1": 0.9268,
+      "true_negative": 176,
+      "false_positive": 0,
+      "false_negative": 6,
+      "true_positive": 38
+    },
+    {
+      "issue": "underexposure",
+      "precision": 0.8636,
+      "recall": 0.9048,
+      "f1": 0.8837,
+      "true_negative": 172,
+      "false_positive": 6,
+      "false_negative": 4,
+      "true_positive": 38
+    },
+    {
+      "issue": "overexposure",
+      "precision": 0.9024,
+      "recall": 0.9024,
+      "f1": 0.9024,
+      "true_negative": 175,
+      "false_positive": 4,
+      "false_negative": 4,
+      "true_positive": 37
+    },
+    {
+      "issue": "noise",
+      "precision": 1.0,
+      "recall": 0.8039,
+      "f1": 0.8913,
+      "true_negative": 169,
+      "false_positive": 0,
+      "false_negative": 10,
+      "true_positive": 41
+    },
+    {
+      "issue": "defect",
+      "precision": 0.75,
+      "recall": 0.6,
+      "f1": 0.6667,
+      "true_negative": 172,
+      "false_positive": 8,
+      "false_negative": 16,
+      "true_positive": 24
+    },
+    {
+      "issue": "severe_degradation",
+      "precision": 0.8837,
+      "recall": 0.9744,
+      "f1": 0.9268,
+      "true_negative": 176,
+      "false_positive": 5,
+      "false_negative": 1,
+      "true_positive": 38
+    }
+  ],
+  "overall_any_issue_confusion_matrix": {
+    "labels": [
+      "acceptable",
+      "has_issue"
+    ],
+    "matrix": [
+      [
+        0,
+        10
+      ],
+      [
+        0,
+        210
+      ]
+    ]
+  }
+}

@@ -6,4 +6,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p /app/data /app/models /app/uploads
 EXPOSE 8000
-CMD ["sh", "-c", "python -m app.ml.train --output ${MODEL_PATH:-/app/models/quality_model.joblib} --bootstrap-if-missing && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "MODEL_FILE=${MODEL_PATH:-/app/models/quality_model.joblib}; if [ ! -f \"$MODEL_FILE\" ]; then python -m app.ml.train --output \"$MODEL_FILE\" --bootstrap-if-missing; fi; exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

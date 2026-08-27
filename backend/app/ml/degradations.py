@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-ISSUES = ("blur", "underexposure", "overexposure", "noise", "defect")
+ISSUES = ("blur", "underexposure", "overexposure", "noise", "defect", "severe_degradation")
 
 def apply_degradation(image: np.ndarray, issue: str, rng: np.random.Generator) -> np.ndarray:
     output = image.copy()
@@ -26,4 +26,14 @@ def apply_degradation(image: np.ndarray, issue: str, rng: np.random.Generator) -
             else:
                 cv2.line(output, (x, y), (min(w - 1, x + size * 3), min(h - 1, y + size)), color, max(1, size // 5))
         return output
+    if issue == "severe_degradation":
+        # Downscale/upscale removes detail; severe JPEG compression adds blocking and ringing artifacts.
+        h, w = output.shape[:2]
+        scale = float(rng.uniform(.08, .22))
+        small_w, small_h = max(16, int(w * scale)), max(16, int(h * scale))
+        output = cv2.resize(output, (small_w, small_h), interpolation=cv2.INTER_AREA)
+        output = cv2.resize(output, (w, h), interpolation=cv2.INTER_NEAREST)
+        quality = int(rng.integers(4, 20))
+        ok, encoded = cv2.imencode(".jpg", output, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        return cv2.imdecode(encoded, cv2.IMREAD_COLOR) if ok else output
     raise ValueError(f"Unknown issue: {issue}")
