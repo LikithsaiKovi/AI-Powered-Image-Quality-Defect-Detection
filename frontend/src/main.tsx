@@ -4,14 +4,14 @@ import './styles.css';
 
 type Issue = { type: string; severity: string; confidence: number };
 type Analysis = { id?: number; filename: string; quality_score: number; quality_label: string; issues: Issue[]; statistics: Record<string, number>; explanation: string; model_version: string; created_at?: string };
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 function App() {
   const [file, setFile] = useState<File | null>(null); const [preview, setPreview] = useState('');
   const [result, setResult] = useState<Analysis | null>(null); const [history, setHistory] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(false); const [error, setError] = useState('');
   const scoreClass = useMemo(() => result ? (result.quality_score >= 80 ? 'good' : result.quality_score >= 50 ? 'warn' : 'bad') : '', [result]);
-  useEffect(() => { fetch(`${API}/api/analyses`).then(r => r.ok ? r.json() : []).then(setHistory).catch(() => setError('Unable to load analysis history. Is the API running?')); }, []);
+  useEffect(() => { fetch(`${API}/api/analyses`).then(r => r.ok ? r.json() : []).then(setHistory).catch(() => setError('Unable to reach backend API. If recently deployed or sleeping, please wait a moment and refresh.')); }, []);
   function choose(selected: File | undefined) { if (!selected) return; setFile(selected); setPreview(URL.createObjectURL(selected)); setResult(null); setError(''); }
   async function analyse() { if (!file) return; setLoading(true); setError(''); const form = new FormData(); form.append('file', file); try { const res = await fetch(`${API}/api/analyses`, { method: 'POST', body: form }); const body = await res.json(); if (!res.ok) throw new Error(body.detail || 'Analysis failed'); setResult(body); setHistory(items => [body, ...items]); } catch (err) { setError(err instanceof Error ? err.message : 'Analysis failed'); } finally { setLoading(false); } }
   return <main><header><div><p className="eyebrow">AI-POWERED VISUAL INSPECTION</p><h1>VisionCheck</h1></div><span className="status">● API-backed quality analysis</span></header>
