@@ -2,7 +2,15 @@
 
 A deployable full-stack image-quality assessment application for the internship technical assessment. It detects blur, underexposure, overexposure, noise, and potential visual defects, returns a structured assessment, persists results, and displays analysis history.
 
+## Live Deployment
+
+- **Frontend Web Application (Vercel):** [https://ai-powered-image-quality-defect-detection-6wbnrvr15.vercel.app/](https://ai-powered-image-quality-defect-detection-6wbnrvr15.vercel.app/)
+- **Backend REST API (Render):** [https://visioncheck-backend-l2ym.onrender.com](https://visioncheck-backend-l2ym.onrender.com)
+- **Interactive API Documentation (Swagger UI):** [https://visioncheck-backend-l2ym.onrender.com/docs](https://visioncheck-backend-l2ym.onrender.com/docs)
+- **Service Health Endpoint:** [https://visioncheck-backend-l2ym.onrender.com/health](https://visioncheck-backend-l2ym.onrender.com/health)
+
 ## Why this approach
+
 
 The solution is a **hybrid computer-vision and machine-learning system**. OpenCV derives interpretable visual features (sharpness, exposure clipping, contrast, noise residual, entropy, saturation, edge density, blockiness, and colourfulness). A multi-output Random Forest learns issue probabilities from those features. This is an AI-based decision component, rather than a fixed threshold-only rules engine, while remaining fast and explainable.
 
@@ -74,9 +82,21 @@ Example response:
 
 ## Data, modelling, and evaluation
 
-The controlled transformations are in `backend/app/ml/degradations.py`; feature extraction is in `backend/app/ml/features.py`; model training is in `backend/app/ml/train.py`. Use unseen source images for validation, retain the generated results, and create representative samples with `python -m app.ml.generate_samples --clean-dir ../data/clean --output-dir ../data/samples`.
+The controlled transformations are in `backend/app/ml/degradations.py`; feature extraction is in `backend/app/ml/features.py`; model training is in `backend/app/ml/train.py`.
+
+### Validation Results (50 Source Images, Grouped 80/20 Split)
+
+| Degradation / Defect Class | Precision | Recall | F1-Score |
+|---|---|---|---|
+| **Blur** | 1.000 | 0.864 | **0.927** |
+| **Underexposure** | 0.864 | 0.905 | **0.884** |
+| **Overexposure** | 0.902 | 0.902 | **0.902** |
+| **Noise** | 1.000 | 0.804 | **0.891** |
+| **Defect** | 0.750 | 0.600 | **0.667** |
+| **Severe Degradation** | 0.884 | 0.974 | **0.927** |
 
 See [architecture](docs/architecture.md) and [evaluation](docs/evaluation.md) for the technical explanation, data-split methodology, limitations, and failure cases.
+
 
 ## Environment variables
 
