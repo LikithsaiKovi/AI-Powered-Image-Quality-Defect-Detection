@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: sqlite:////app/data/quality.db
+      MODEL_PATH: /app/models/quality_model.joblib
+      UPLOAD_DIR: /app/uploads
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8080
+    volumes:
+      - app_data:/app/data
+      - model_data:/app/models
+      - upload_data:/app/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  app_data:
+  model_data:
+  upload_data:
